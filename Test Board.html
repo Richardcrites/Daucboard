@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TEST MODE - ICU Board</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Test Mode Color Palette (Warmer colors to signal 'Caution/Testing') */
+    --bg: #f9f7f2; 
+    --surface: #ffffff;
+    --border: #e8e2d4;
+    --text: #2c241a;
+    --muted: #8c7e6a;
+    --icu-accent: #f59e0b; /* Amber */
+    --surg-accent: #d97706; /* Orange */
+    --test-banner: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; padding: 0; }
+
+  /* TEST BANNER */
+  .test-ribbon {
+    background: var(--test-banner);
+    color: #000;
+    text-align: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    padding: 6px;
+    text-transform: uppercase;
+    border-bottom: 2px solid #000;
+  }
+
+  .main-container { padding: 24px 28px; }
+
+  .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+  .clinic-name { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+  .board-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--text); }
+  
+  .edit-toggle { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 6px; padding: 7px 14px; cursor: pointer; font-size: 11px; color: var(--muted); text-transform: uppercase; }
+  .edit-toggle.active { background: #fffbeb; border-color: var(--icu-accent); color: #92400e; }
+  .edit-toggle .dot { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; }
+  .edit-toggle.active .dot { background: var(--icu-accent); }
+
+  .board-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; margin-bottom: 24px; }
+  .board-table th { font-size: 9px; color: var(--muted); text-transform: uppercase; padding: 4px 12px; text-align: left; }
+  .board-table tr { background: var(--surface); box-shadow: var(--shadow); transition: transform 0.1s; }
+  .board-table td { padding: 12px; font-size: 12px; }
+  
+  .icu td:first-child { border-left: 6px solid var(--icu-accent); }
+  .surg td:first-child { border-left: 6px solid var(--surg-accent); }
+
+  .status-pill { padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 600; border: 1px solid transparent; }
+  .cpr { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+  .dnr { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+  /* Modal & Form */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(2px); }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; padding: 28px; border-radius: 12px; width: 650px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+  input, select, textarea { padding: 10px; border: 1.5px solid var(--border); border-radius: 6px; font-family: inherit; width: 100%; }
+  .btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .btn-save { background: var(--icu-accent); color: white; }
+</style>
+</head>
+<body>
+
+<div class="test-ribbon">⚠️ Testing Environment — Data does not reflect live hospital status ⚠️</div>
+
+<div class="main-container">
+  <div class="header">
+    <div>
+      <div class="clinic-name">Dallas Animal Urgency [TEST]</div>
+      <div class="board-title">Test ICU Board</div>
+    </div>
+    <div class="header-right">
+      <div class="edit-toggle" id="editToggle" onclick="toggleEditMode()">
+        <div class="dot"></div>Edit Mode
+      </div>
+      <div style="text-align: right; margin-top: 10px;">
+        <div id="clock" style="font-size: 20px; font-weight: 600;">--:--</div>
+        <div id="dateline" style="font-size: 10px; color: var(--muted);"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="icu-section">
+    <table class="board-table">
+      <thead>
+        <tr><th>Patient</th><th>Weight</th><th>Loc</th><th>DVM</th><th>Tech</th><th>Rx</th><th>Status</th><th>Alerts</th></tr>
+      </thead>
+      <tbody id="icu-body"></tbody>
+    </table>
+  </div>
+
+  <button id="addBtn" style="display:none; margin-bottom: 20px;" class="btn btn-save" onclick="openModal()">+ Add Test Patient</button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 style="font-family:'Syne'">Edit Test Patient</h2>
+    <div class="form-grid">
+      <input id="f-name" placeholder="Patient Name">
+      <input id="f-owner" placeholder="Owner Last Name">
+      <input id="f-weight" type="number" step="0.1" placeholder="Weight (kg)">
+      <input id="f-location" placeholder="Cage/Run">
+      <input id="f-dvm" placeholder="Doctor">
+      <input id="f-tech" placeholder="Tech Initials">
+      <textarea id="f-rx" placeholder="Treatment / Meds" style="grid-column: 1/-1"></textarea>
+      <select id="f-section"><option value="icu">ICU</option><option value="surg">Surgery</option></select>
+      <select id="f-status"><option value="CPR">CPR</option><option value="DNR">DNR</option></select>
+    </div>
+    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+      <button class="btn btn-save" onclick="saveToSheet()">Save Changes</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // PASTE YOUR NEW TEST APPS SCRIPT URL HERE
+  const TEST_API_URL = 'https://script.google.com/macros/s/AKfycbxwoBsM3SdknuvVpFTXlDwHrtqRo_2eTSR_AAf1xrh1dFqSb8P-IhA62FboIU8yTapl/exec'; 
+  let editMode = false;
+
+  async function loadData() {
+    try {
+      const resp = await fetch(TEST_API_URL);
+      const data = await resp.json();
+      const body = document.getElementById('icu-body');
+      body.innerHTML = '';
+
+      data.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.className = p.section.toLowerCase();
+        if(editMode) tr.onclick = () => openModal(p);
+        
+        tr.innerHTML = `
+          <td><strong>${p.name || 'UNNAMED'}</strong><br><small>${p.owner || 'N/A'}</small></td>
+          <td>${p.weight || '--'} kg</td>
+          <td>${p.location || '--'}</td>
+          <td>${p.dvm || '--'}</td>
+          <td>${p.tech || '--'}</td>
+          <td style="font-size:11px; color:#666">${p.rx || '--'}</td>
+          <td><span class="status-pill ${p.status.toLowerCase()}">${p.status}</span></td>
+          <td>${p.alert || '--'}</td>
+        `;
+        body.appendChild(tr);
+      });
+    } catch (e) { console.error("Test Load Error", e); }
+  }
+
+  async function saveToSheet() {
+    const data = {
+      name: document.getElementById('f-name').value,
+      owner: document.getElementById('f-owner').value,
+      weight: document.getElementById('f-weight').value,
+      location: document.getElementById('f-location').value,
+      dvm: document.getElementById('f-dvm').value,
+      tech: document.getElementById('f-tech').value,
+      rx: document.getElementById('f-rx').value,
+      section: document.getElementById('f-section').value,
+      status: document.getElementById('f-status').value
+    };
+
+    const btn = event.target;
+    btn.textContent = "Syncing...";
+    btn.disabled = true;
+
+    await fetch(TEST_API_URL, { method: 'POST', body: JSON.stringify(data) });
+    
+    btn.textContent = "Save Changes";
+    btn.disabled = false;
+    closeModal();
+    loadData();
+  }
+
+  function toggleEditMode() {
+    editMode = !editMode;
+    document.getElementById('editToggle').classList.toggle('active', editMode);
+    document.getElementById('addBtn').style.display = editMode ? 'block' : 'none';
+  }
+
+  function openModal(p = {}) {
+    if(p.name) {
+      document.getElementById('f-name').value = p.name;
+      document.getElementById('f-owner').value = p.owner;
+      // ... fill other fields if editing existing ...
+    }
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+  function tick() {
+    const n = new Date();
+    document.getElementById('clock').textContent = n.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    document.getElementById('dateline').textContent = n.toDateString();
+  }
+
+  setInterval(tick, 1000);
+  setInterval(loadData, 10000); // 10s refresh for test responsiveness
+  loadData();
+</script>
+
+</body>
+</html>
