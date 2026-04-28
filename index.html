@@ -128,31 +128,31 @@
   const TEST_API_URL = 'https://script.google.com/macros/s/AKfycbxwoBsM3SdknuvVpFTXlDwHrtqRo_2eTSR_AAf1xrh1dFqSb8P-IhA62FboIU8yTapl/exec'; 
   let editMode = false;
 
-  async function loadData() {
-    try {
-      const resp = await fetch(TEST_API_URL);
-      const data = await resp.json();
-      const body = document.getElementById('icu-body');
-      body.innerHTML = '';
-
-      data.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.className = p.section.toLowerCase();
-        if(editMode) tr.onclick = () => openModal(p);
-        
-        tr.innerHTML = `
-          <td><strong>${p.name || 'UNNAMED'}</strong><br><small>${p.owner || 'N/A'}</small></td>
-          <td>${p.weight || '--'} kg</td>
-          <td>${p.location || '--'}</td>
-          <td>${p.dvm || '--'}</td>
-          <td>${p.tech || '--'}</td>
-          <td style="font-size:11px; color:#666">${p.rx || '--'}</td>
-          <td><span class="status-pill ${p.status.toLowerCase()}">${p.status}</span></td>
-          <td>${p.alert || '--'}</td>
-        `;
-        body.appendChild(tr);
-      });
-    } catch (e) { console.error("Test Load Error", e); }
+  data.forEach(p => {
+  const tr = document.createElement('tr');
+  
+  // SAFETY: If section is blank, default to 'icu'
+  const section = (p.section || 'icu').toLowerCase(); 
+  tr.className = section;
+  
+  if(editMode) tr.onclick = () => openModal(p);
+  
+  // SAFETY: Check for blank status and alert levels
+  const status = (p.status || 'CPR').toUpperCase();
+  const alertLevel = (p.alertLevel || 'none').toLowerCase();
+  const alertClass = alertLevel === 'urgent' ? 'urgent' : (alertLevel === 'normal' ? 'normal' : '');
+  
+  tr.innerHTML = `
+    <td><strong>${p.name || 'Unnamed'}</strong><br><small>${p.owner || 'No Owner'}</small></td>
+    <td>${p.weight || '--'} kg</td>
+    <td>${p.location || '--'}</td>
+    <td>${p.dvm || '--'} / ${p.tech || '--'}</td>
+    <td style="font-size:11px; color:#666">${p.rx || '--'}</td>
+    <td><span class="status-pill ${status.toLowerCase()}">${status}</span></td>
+    <td>${p.alert ? `<div class="alert-box ${alertClass}">${p.alert}</div>` : '--'}</td>
+  `;
+  body.appendChild(tr);
+});
   }
 
   async function saveToSheet() {
