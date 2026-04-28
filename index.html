@@ -6,7 +6,6 @@
 <title>DAUC ICU Board - LIVE CLOUD</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
-  /* Keeping your original styling exactly as it was */
   :root {
     --bg: #f0f3f8; --surface: #ffffff; --border: #d4dce8;
     --text: #1a2336; --muted: #7a8fa8; --icu-accent: #2563eb;
@@ -53,7 +52,7 @@
 <div id="icu-wrap">
   <div style="font-size:10px; font-weight:800; color:var(--icu-accent); margin-bottom:10px;">ICU / HOSPITAL</div>
   <table class="board-table">
-    <thead><tr><th>Patient</th><th>Wt</th><th>Species</th><th>Loc</th><th>DVM (AM/PM)</th><th>Tech</th><th>Rx</th><th>Status</th><th>Alerts</th></tr></thead>
+    <thead><tr><th>Patient</th><th>Wt</th><th>Species</th><th>Loc</th><th>DVM (AM/PM)</th><th>Tech</th><th>Reason</th><th>Rx</th><th>Status</th><th>Alerts</th></tr></thead>
     <tbody id="icu-body"></tbody>
   </table>
 </div>
@@ -61,7 +60,7 @@
 <div id="surg-wrap" style="margin-top:30px;">
   <div style="font-size:10px; font-weight:800; color:var(--surg-accent); margin-bottom:10px;">SURGERY</div>
   <table class="board-table">
-    <thead><tr><th>Patient</th><th>Wt</th><th>Species</th><th>Loc</th><th>DVM (AM/PM)</th><th>Tech</th><th>Rx</th><th>Status</th><th>Alerts</th></tr></thead>
+    <thead><tr><th>Patient</th><th>Wt</th><th>Species</th><th>Loc</th><th>DVM (AM/PM)</th><th>Tech</th><th>Reason</th><th>Rx</th><th>Status</th><th>Alerts</th></tr></thead>
     <tbody id="surg-body"></tbody>
   </table>
 </div>
@@ -79,6 +78,7 @@
       <input id="f-location" placeholder="Location">
       <input id="f-dvm-am" placeholder="DVM AM"><input id="f-dvm-pm" placeholder="DVM PM">
       <input id="f-tech" placeholder="Tech Initials">
+      <input id="f-reason" placeholder="Reason for Visit">
       <select id="f-section"><option value="icu">ICU</option><option value="surg">Surgery</option></select>
       <select id="f-status"><option value="CPR">CPR</option><option value="DNR">DNR</option></select>
       <textarea id="f-rx" placeholder="Discharge + Rx" style="grid-column: 1/-1"></textarea>
@@ -98,7 +98,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-  // --- PASTE YOUR FIREBASE CONFIG HERE ---
 const firebaseConfig = {
   apiKey: "AIzaSyComnKEUpRWlBX9YXNnb8fYwBVdNbpTZfE",
   authDomain: "daucboard.firebaseapp.com",
@@ -114,7 +113,6 @@ const firebaseConfig = {
   const db = firebase.database();
   let editMode = false, currentId = null;
 
-  // --- REAL-TIME SYNC ---
   db.ref('patients').on('value', (snapshot) => {
     const data = snapshot.val();
     renderAll(data);
@@ -142,6 +140,7 @@ const firebaseConfig = {
         <td>${p.location}</td>
         <td><span style="color:var(--am-color)">${p.dvmAm || '--'}</span> / <span style="color:var(--pm-color)">${p.dvmPm || '--'}</span></td>
         <td>${p.tech}</td>
+        <td style="color:var(--muted)">${p.reason || '--'}</td>
         <td style="max-width:150px; font-size:10px; color:var(--muted)">${p.rx}</td>
         <td><span class="status-pill ${p.status.toLowerCase()}">${p.status}</span></td>
         <td>${p.alert ? `<div style="background:#fffbeb; border:1px solid #fde68a; padding:4px; font-size:10px; border-radius:4px;">${p.alert}</div>` : '--'}</td>
@@ -160,6 +159,7 @@ const firebaseConfig = {
       dvmAm: document.getElementById('f-dvm-am').value,
       dvmPm: document.getElementById('f-dvm-pm').value,
       tech: document.getElementById('f-tech').value,
+      reason: document.getElementById('f-reason').value,
       section: document.getElementById('f-section').value,
       status: document.getElementById('f-status').value,
       rx: document.getElementById('f-rx').value,
@@ -186,6 +186,7 @@ const firebaseConfig = {
     document.getElementById('f-dvm-am').value = p.dvmAm || '';
     document.getElementById('f-dvm-pm').value = p.dvmPm || '';
     document.getElementById('f-tech').value = p.tech;
+    document.getElementById('f-reason').value = p.reason || '';
     document.getElementById('f-section').value = p.section;
     document.getElementById('f-status').value = p.status;
     document.getElementById('f-rx').value = p.rx;
@@ -206,7 +207,7 @@ const firebaseConfig = {
     document.getElementById('modalOverlay').classList.remove('open');
     currentId = null;
     document.getElementById('delBtn').style.display = 'none';
-    ['f-name','f-owner','f-weight','f-location','f-dvm-am','f-dvm-pm','f-tech','f-rx','f-alert'].forEach(i => document.getElementById(i).value = '');
+    ['f-name','f-owner','f-weight','f-location','f-dvm-am','f-dvm-pm','f-tech','f-reason','f-rx','f-alert'].forEach(i => document.getElementById(i).value = '');
   }
 
   setInterval(() => {
