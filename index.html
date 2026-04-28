@@ -122,131 +122,117 @@
     </div>
   </div>
 </div>
-
 <script>
-  // PASTE YOUR NEW TEST APPS SCRIPT URL HERE
+  // 1. Ensure this URL is your /exec link from the Web App deployment
   const TEST_API_URL = 'https://script.google.com/macros/s/AKfycbxwoBsM3SdknuvVpFTXlDwHrtqRo_2eTSR_AAf1xrh1dFqSb8P-IhA62FboIU8yTapl/exec'; 
+  
   let editMode = false;
 
-  data.forEach(p => {
-  const tr = document.createElement('tr');
-  
-  // SAFETY: If section is blank, default to 'icu'
-  const section = (p.section || 'icu').toLowerCase(); 
-  tr.className = section;
-  
-  if(editMode) tr.onclick = () => openModal(p);
-  
-  // SAFETY: Check for blank status and alert levels
-  const status = (p.status || 'CPR').toUpperCase();
-  const alertLevel = (p.alertLevel || 'none').toLowerCase();
-  const alertClass = alertLevel === 'urgent' ? 'urgent' : (alertLevel === 'normal' ? 'normal' : '');
-  
-  tr.innerHTML = `
-    <td><strong>${p.name || 'Unnamed'}</strong><br><small>${p.owner || 'No Owner'}</small></td>
-    <td>${p.weight || '--'} kg</td>
-    <td>${p.location || '--'}</td>
-    <td>${p.dvm || '--'} / ${p.tech || '--'}</td>
-    <td style="font-size:11px; color:#666">${p.rx || '--'}</td>
-    <td><span class="status-pill ${status.toLowerCase()}">${status}</span></td>
-    <td>${p.alert ? `<div class="alert-box ${alertClass}">${p.alert}</div>` : '--'}</td>
-  `;
-  body.appendChild(tr);
-);
-
   async function loadData() {
-  try {
-    const resp = await fetch(TEST_API_URL);
-    const data = await resp.json();
-    
-    const icuBody = document.getElementById('icu-body');
-    const surgBody = document.getElementById('surg-body'); // If you have a separate surg-body id
-    
-    // Clear the table
-    icuBody.innerHTML = '';
-    if (surgBody) surgBody.innerHTML = '';
-
-    data.forEach(p => {
-      const tr = document.createElement('tr');
-      tr.className = p.section; // Sets 'icu' or 'surg' class automatically
+    try {
+      const resp = await fetch(TEST_API_URL);
+      if (!resp.ok) throw new Error('Network response was not ok');
+      const data = await resp.json();
       
-      if(editMode) tr.onclick = () => populateModal(p);
+      const icuBody = document.getElementById('icu-body');
+      // If you added a surg-body ID to your second table, this will use it
+      const surgBody = document.getElementById('surg-body') || icuBody; 
       
-      // We use the EXACT names from your screenshot headers
-      const name = p['PATIENT'] || 'Unnamed';
-      const weight = p['Weight'] || '--';
-      const species = p['K9/Fel'] || '';
-      const location = p['LOCATION'] || '--';
-      const dvm = p['DVM'] || '--';
-      const tech = p['Tech'] || '--';
-      const rx = p['Discharge + RX'] || '--';
-      const status = (p['CPR/DNR'] || 'CPR').toUpperCase();
-      const alert = p['Alerts'] || '';
+      icuBody.innerHTML = '';
+      if (surgBody !== icuBody) surgBody.innerHTML = '';
 
-      tr.innerHTML = `
-        <td>
-          <strong>${name}</strong>
-          <div style="font-size:9px; color:#8c7e6a;">${species}</div>
-        </td>
-        <td>${weight} kg</td>
-        <td><span style="background:#fff; border:1px solid #e8e2d4; padding:2px 6px; border-radius:4px;">${location}</span></td>
-        <td>${dvm} / ${tech}</td>
-        <td style="max-width:200px; font-size:11px; color:#4a4a4a; line-height:1.2;">${rx}</td>
-        <td><span class="status-pill ${status.toLowerCase()}">${status}</span></td>
-        <td>${alert ? `<div style="font-size:10px; background:#fffbeb; border:1px solid #fde68a; padding:5px; border-radius:4px; color:#92400e;">${alert}</div>` : '--'}</td>
-      `;
+      // The loop MUST be inside this function
+      data.forEach(p => {
+        const tr = document.createElement('tr');
+        const section = (p.section || 'icu').toLowerCase().trim();
+        tr.className = section;
+        
+        if(editMode) {
+          tr.style.cursor = 'pointer';
+          tr.onclick = () => populateModal(p);
+        }
+        
+        // Exact column names from your Row 3
+        const name = p['PATIENT'] || 'Unnamed';
+        const weight = p['Weight'] || '--';
+        const species = p['K9/Fel'] || '';
+        const location = p['LOCATION'] || '--';
+        const dvm = p['DVM'] || '--';
+        const tech = p['Tech'] || '--';
+        const rx = p['Discharge + RX'] || '--';
+        const status = (p['CPR/DNR'] || 'CPR').toUpperCase();
+        const alert = p['Alerts'] || '';
 
-      // Sort into the correct table section
-      if (p.section === 'surg' && surgBody) {
-        surgBody.appendChild(tr);
-      } else {
-        icuBody.appendChild(tr);
-      }
-    });
-  } catch (e) {
-    console.error("Board Sync Error:", e);
+        tr.innerHTML = `
+          <td><strong>${name}</strong><br><small style="color:var(--muted)">${species}</small></td>
+          <td>${weight} kg</td>
+          <td><span style="background:#fff; border:1px solid #e8e2d4; padding:2px 6px; border-radius:4px;">${location}</span></td>
+          <td>${dvm} / ${tech}</td>
+          <td style="max-width:200px; font-size:11px; color:#4a4a4a; line-height:1.2;">${rx}</td>
+          <td><span class="status-pill ${status.toLowerCase()}">${status}</span></td>
+          <td>${alert ? `<div style="font-size:10px; background:#fffbeb; border:1px solid #fde68a; padding:5px; border-radius:4px; color:#92400e;">${alert}</div>` : '--'}</td>
+        `;
+
+        // Put in ICU or Surgery based on the p.section value from the script
+        if (section === 'surg') {
+          surgBody.appendChild(tr);
+        } else {
+          icuBody.appendChild(tr);
+        }
+      });
+    } catch (e) { 
+      console.error("Test Load Error:", e); 
+    }
   }
-}
-  async function saveToSheet() {
-    const data = {
-      name: document.getElementById('f-name').value,
-      owner: document.getElementById('f-owner').value,
-      weight: document.getElementById('f-weight').value,
-      location: document.getElementById('f-location').value,
-      dvm: document.getElementById('f-dvm').value,
-      tech: document.getElementById('f-tech').value,
-      rx: document.getElementById('f-rx').value,
-      section: document.getElementById('f-section').value,
-      status: document.getElementById('f-status').value
-    };
 
+  async function saveToSheet() {
     const btn = event.target;
     btn.textContent = "Syncing...";
     btn.disabled = true;
 
-    await fetch(TEST_API_URL, { method: 'POST', body: JSON.stringify(data) });
-    
-    btn.textContent = "Save Changes";
-    btn.disabled = false;
-    closeModal();
-    loadData();
+    const payload = {
+      "PATIENT": document.getElementById('f-name').value,
+      "Weight": document.getElementById('f-weight').value,
+      "LOCATION": document.getElementById('f-location').value,
+      "DVM": document.getElementById('f-dvm').value,
+      "Tech": document.getElementById('f-tech').value,
+      "Discharge + RX": document.getElementById('f-rx').value,
+      "CPR/DNR": document.getElementById('f-status').value,
+      "Alerts": document.getElementById('f-alert').value
+    };
+
+    try {
+      await fetch(TEST_API_URL, { method: 'POST', body: JSON.stringify(payload) });
+      closeModal();
+      loadData();
+    } catch(e) {
+      console.error("Save failed", e);
+    } finally {
+      btn.textContent = "Save Changes";
+      btn.disabled = false;
+    }
   }
 
   function toggleEditMode() {
     editMode = !editMode;
     document.getElementById('editToggle').classList.toggle('active', editMode);
     document.getElementById('addBtn').style.display = editMode ? 'block' : 'none';
+    loadData();
   }
 
-  function openModal(p = {}) {
-    if(p.name) {
-      document.getElementById('f-name').value = p.name;
-      document.getElementById('f-owner').value = p.owner;
-      // ... fill other fields if editing existing ...
-    }
-    document.getElementById('modalOverlay').classList.add('open');
+  function populateModal(p) {
+    document.getElementById('f-name').value = p['PATIENT'] || '';
+    document.getElementById('f-weight').value = p['Weight'] || '';
+    document.getElementById('f-location').value = p['LOCATION'] || '';
+    document.getElementById('f-dvm').value = p['DVM'] || '';
+    document.getElementById('f-tech').value = p['Tech'] || '';
+    document.getElementById('f-rx').value = p['Discharge + RX'] || '';
+    document.getElementById('f-status').value = p['CPR/DNR'] || 'CPR';
+    document.getElementById('f-alert').value = p['Alerts'] || '';
+    openModal();
   }
 
+  function openModal() { document.getElementById('modalOverlay').classList.add('open'); }
   function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
 
   function tick() {
@@ -256,7 +242,7 @@
   }
 
   setInterval(tick, 1000);
-  setInterval(loadData, 10000); // 10s refresh for test responsiveness
+  setInterval(loadData, 10000); 
   loadData();
 </script>
 
