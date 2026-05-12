@@ -3,92 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DAUC ICU Board - LIVE CLOUD</title>
+<title>DAUC ICU Board - TV LIVE</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f0f3f8; --surface: #ffffff; --border: #d4dce8;
     --text: #1a2336; --muted: #7a8fa8; --icu-accent: #2563eb;
     --surg-accent: #7c3aed; --cpr: #16a34a; --dnr: #dc2626;
-    --am-color: #0891b2; --am-bg: #ecfeff; --pm-color: #7c3aed; --pm-bg: #f5f3ff;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --am-color: #0891b2; --pm-color: #7c3aed;
+    --shadow: 0 1px 2px rgba(0,0,0,0.05);
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; padding: 24px 28px; }
-  .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
-  .board-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--text); }
-  .edit-toggle { display:flex; align-items:center; gap:8px; background:var(--surface); border:1.5px solid var(--border); border-radius:6px; padding:7px 14px; cursor:pointer; font-size:11px; text-transform:uppercase; color:var(--muted); }
-  .edit-toggle.active { background:#eff6ff; border-color:var(--icu-accent); color:var(--icu-accent); }
-  .board-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; margin-bottom: 24px; }
-  .board-table th { font-size: 9px; color: var(--muted); text-transform: uppercase; padding: 4px 12px; text-align: left; }
+  
+  body { 
+    background: var(--bg); 
+    color: var(--text); 
+    font-family: 'DM Mono', monospace; 
+    padding: 10px 15px; 
+  }
+
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  .board-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--text); }
+
+  /* HIGH DENSITY PADDING */
+  .board-table { width: 100%; border-collapse: separate; border-spacing: 0 2px; }
+  .board-table th { font-size: 8px; color: var(--muted); text-transform: uppercase; padding: 2px 8px; text-align: left; }
+  
   .board-table tr { background: var(--surface); box-shadow: var(--shadow); }
-  .board-table td { padding: 12px; font-size: 12px; vertical-align: middle; }
-  .icu td:first-child { border-left: 4px solid var(--icu-accent); border-radius: 6px 0 0 6px; }
-  .surg td:first-child { border-left: 4px solid var(--surg-accent); border-radius: 6px 0 0 6px; }
-  .status-pill { padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 600; text-transform: uppercase; border: 1px solid transparent; }
-  .cpr { background: #f0fdf4; color: var(--cpr); border-color: #bbf7d0; }
-  .dnr { background: #fef2f2; color: var(--dnr); border-color: #fecaca; }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(15,25,45,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+  /* Reduced padding to 4px for high density */
+  .board-table td { padding: 4px 8px; font-size: 11px; vertical-align: middle; line-height: 1.1; }
+
+  .icu td:first-child { border-left: 4px solid var(--icu-accent); border-radius: 4px 0 0 4px; }
+  .surg td:first-child { border-left: 4px solid var(--surg-accent); border-radius: 4px 0 0 4px; }
+
+  .patient-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; }
+  .patient-owner { font-size: 8px; color: var(--muted); text-transform: uppercase; }
+
+  .status-pill { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; display: inline-block; }
+  .cpr { background: #f0fdf4; color: var(--cpr); border: 1px solid #bbf7d0; }
+  .dnr { background: #fef2f2; color: var(--dnr); border: 1px solid #fecaca; }
+
+  .section-head { font-size: 10px; font-weight: 800; margin: 12px 0 4px 0; letter-spacing: 1px; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
   .modal-overlay.open { display: flex; }
-  .modal { background: white; padding: 25px; border-radius: 12px; width: 650px; max-height: 90vh; overflow-y: auto; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  input, select, textarea { padding: 8px; border: 1.5px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 12px; width: 100%; }
-  .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 11px; }
+  .modal { background: white; padding: 20px; border-radius: 8px; width: 600px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  input, select, textarea { padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; width: 100%; }
+
+  .edit-toggle { cursor:pointer; font-size:10px; border:1px solid var(--border); padding:5px 10px; border-radius:4px; background:white; }
+  .edit-toggle.active { background:var(--icu-accent); color:white; border-color:var(--icu-accent); }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div>
-    <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:2px;">Dallas Animal Urgent Care</div>
-    <div class="board-title">Live ICU Board</div>
+    <div style="font-size:9px; color:var(--muted); text-transform:uppercase;">Dallas Animal Urgent Care</div>
+    <div class="board-title">ICU Board</div>
   </div>
-  <div style="display:flex; align-items:center; gap:15px;">
-    <div class="edit-toggle" id="editToggle" onclick="toggleEditMode()">Edit Mode</div>
-    <div id="clock" style="font-size:24px; font-weight:500;">--:-- --</div>
+  <div style="display:flex; align-items:center; gap:20px;">
+    <div class="edit-toggle" id="editToggle" onclick="toggleEditMode()">Admin Mode</div>
+    <div id="clock" style="font-size:20px; font-weight:600;">--:--</div>
   </div>
 </div>
 
-<div id="icu-wrap">
-  <div style="font-size:10px; font-weight:800; color:var(--icu-accent); margin-bottom:10px;">ICU / HOSPITAL</div>
-  <table class="board-table">
-    <thead><tr><th>Patient</th><th>Wt</th><th>Species</th><th>Loc</th><th>DVM (AM/PM)</th><th>Tech</th><th>Reason</th><th>Rx</th><th>Status</th><th>Alerts</th></tr></thead>
-    <tbody id="icu-body"></tbody>
-  </table>
-</div>
+<div class="section-head" style="color:var(--icu-accent)">✚ ICU / HOSPITAL</div>
+<table class="board-table">
+  <thead>
+    <tr>
+      <th style="width:140px">Patient</th><th style="width:50px">Wt</th><th style="width:45px">Sp</th><th style="width:70px">Loc</th><th style="width:90px">DVM</th><th style="width:60px">Tech</th>
+      <th>Reason</th><th>Rx / Instructions</th><th style="width:65px">Status</th><th>Alerts</th>
+    </tr>
+  </thead>
+  <tbody id="icu-body"></tbody>
+</table>
 
-<div id="surg-wrap" style="margin-top:30px;">
-  <div style="font-size:10px; font-weight:800; color:var(--surg-accent); margin-bottom:10px;">SURGERY</div>
-  <table class="board-table">
-    <thead><tr><th>Patient</th><th>Wt</th><th>Species</th><th>Loc</th><th>DVM (AM/PM)</th><th>Tech</th><th>Reason</th><th>Rx</th><th>Status</th><th>Alerts</th></tr></thead>
-    <tbody id="surg-body"></tbody>
-  </table>
-</div>
+<div class="section-head" style="color:var(--surg-accent)">✂ SURGERY</div>
+<table class="board-table">
+  <thead>
+    <tr>
+      <th style="width:140px">Patient</th><th style="width:50px">Wt</th><th style="width:45px">Sp</th><th style="width:70px">Loc</th><th style="width:90px">DVM</th><th style="width:60px">Tech</th>
+      <th>Reason</th><th>Rx / Instructions</th><th style="width:65px">Status</th><th>Alerts</th>
+    </tr>
+  </thead>
+  <tbody id="surg-body"></tbody>
+</table>
 
-<button id="addBtn" style="display:none; margin: 20px 0;" class="btn" onclick="openModal()" style="background:var(--icu-accent); color:white;">+ Add Patient</button>
+<button id="addBtn" style="display:none; margin: 15px 0; padding: 10px; background:var(--icu-accent); color:white; border:none; border-radius:4px; cursor:pointer;" onclick="openModal()">+ Add Patient</button>
 
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
-    <h2 id="modalTitle" style="font-family:'Syne'; margin-bottom:15px;">Patient Record</h2>
+    <h2 id="modalTitle" style="margin-bottom:15px; font-family:Syne;">Patient Entry</h2>
     <div class="form-grid">
       <input id="f-name" placeholder="Name">
       <input id="f-owner" placeholder="Owner">
-      <input id="f-weight" placeholder="Weight (lb)">
+      <input id="f-weight" placeholder="Weight">
       <select id="f-species"><option value="K9">K9</option><option value="Fel">Fel</option></select>
       <input id="f-location" placeholder="Location">
       <input id="f-dvm-am" placeholder="DVM AM"><input id="f-dvm-pm" placeholder="DVM PM">
-      <input id="f-tech" placeholder="Tech Initials">
-      <input id="f-reason" placeholder="Reason for Visit">
+      <input id="f-tech" placeholder="Tech">
+      <input id="f-reason" placeholder="Reason">
       <select id="f-section"><option value="icu">ICU</option><option value="surg">Surgery</option></select>
       <select id="f-status"><option value="CPR">CPR</option><option value="DNR">DNR</option></select>
-      <textarea id="f-rx" placeholder="Discharge + Rx" style="grid-column: 1/-1"></textarea>
+      <textarea id="f-rx" placeholder="Rx" style="grid-column: 1/-1"></textarea>
       <textarea id="f-alert" placeholder="Alerts" style="grid-column: 1/-1"></textarea>
     </div>
-    <div style="display:flex; justify-content:space-between; margin-top:20px;">
-      <button class="btn" style="background:#f1f5f9" onclick="closeModal()">Cancel</button>
+    <div style="margin-top:15px; display:flex; justify-content:space-between;">
+      <button onclick="closeModal()" style="border:none; background:none; cursor:pointer; color:var(--muted)">Cancel</button>
       <div>
-        <button id="delBtn" class="btn" style="background:#fee2e2; color:#991b1b; display:none" onclick="deletePatient()">Delete</button>
-        <button class="btn" style="background:var(--icu-accent); color:white;" onclick="savePatient()">Save to Cloud</button>
+        <button id="delBtn" style="background:#fee2e2; color:#991b1b; display:none; padding:8px 15px; border-radius:4px; border:none; margin-right:10px; cursor:pointer;" onclick="deletePatient()">Delete</button>
+        <button style="background:var(--icu-accent); color:white; padding:8px 15px; border-radius:4px; border:none; cursor:pointer;" onclick="savePatient()">Save to Cloud</button>
       </div>
     </div>
   </div>
@@ -109,110 +135,133 @@ const firebaseConfig = {
   measurementId: "G-1F1GD228LV"
 };
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-  let editMode = false, currentId = null;
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+let editMode = false, currentId = null;
 
-  db.ref('patients').on('value', (snapshot) => {
-    const data = snapshot.val();
-    renderAll(data);
-  });
+db.ref('patients').on('value', (snapshot) => {
+  renderAll(snapshot.val());
+});
 
-  function renderAll(data) {
-    const icu = document.getElementById('icu-body');
-    const surg = document.getElementById('surg-body');
-    icu.innerHTML = ''; surg.innerHTML = '';
-    if(!data) return;
+function renderAll(data) {
+  const icu = document.getElementById('icu-body');
+  const surg = document.getElementById('surg-body');
+  icu.innerHTML = ''; surg.innerHTML = '';
+  if(!data) return;
 
-    Object.keys(data).forEach(id => {
-      const p = data[id];
-      const tr = document.createElement('tr');
-      tr.className = p.section;
-      if(editMode) {
+  Object.keys(data).forEach(id => {
+    const p = data[id];
+    const tr = document.createElement('tr');
+    tr.className = p.section;
+    if(editMode) {
         tr.style.cursor = 'pointer';
         tr.onclick = () => editPatient(id, p);
-      }
-      
-      tr.innerHTML = `
-        <td><strong>${p.name}</strong><br><small>${p.owner}</small></td>
-        <td>${p.weight} lb</td>
-        <td>${p.species}</td>
-        <td>${p.location}</td>
-        <td><span style="color:var(--am-color)">${p.dvmAm || '--'}</span> / <span style="color:var(--pm-color)">${p.dvmPm || '--'}</span></td>
-        <td>${p.tech}</td>
-        <td style="color:var(--muted)">${p.reason || '--'}</td>
-        <td style="max-width:150px; font-size:10px; color:var(--muted)">${p.rx}</td>
-        <td><span class="status-pill ${p.status.toLowerCase()}">${p.status}</span></td>
-        <td>${p.alert ? `<div style="background:#fffbeb; border:1px solid #fde68a; padding:4px; font-size:10px; border-radius:4px;">${p.alert}</div>` : '--'}</td>
-      `;
-      if(p.section === 'surg') surg.appendChild(tr); else icu.appendChild(tr);
-    });
-  }
+    }
+    
+    tr.innerHTML = `
+      <td><div class="patient-name">${p.name}</div><div class="patient-owner">${p.owner}</div></td>
+      <td>${p.weight}</td>
+      <td>${p.species}</td>
+      <td>${p.location}</td>
+      <td>${p.dvmAm || ''}/${p.dvmPm || ''}</td>
+      <td>${p.tech}</td>
+      <td style="font-size:10px">${p.reason || '--'}</td>
+      <td style="font-size:10px; color:#444">${p.rx || '--'}</td>
+      <td><span class="status-pill ${p.status.toLowerCase()}">${p.status}</span></td>
+      <td>${p.alert ? `<div style="background:#fffbeb; border:1px solid #fde68a; padding:2px; border-radius:2px; font-size:9px;">${p.alert}</div>` : '--'}</td>
+    `;
+    if(p.section === 'surg') surg.appendChild(tr); else icu.appendChild(tr);
+  });
+}
 
-  function savePatient() {
-    const p = {
-      name: document.getElementById('f-name').value,
-      owner: document.getElementById('f-owner').value,
-      weight: document.getElementById('f-weight').value,
-      species: document.getElementById('f-species').value,
-      location: document.getElementById('f-location').value,
-      dvmAm: document.getElementById('f-dvm-am').value,
-      dvmPm: document.getElementById('f-dvm-pm').value,
-      tech: document.getElementById('f-tech').value,
-      reason: document.getElementById('f-reason').value,
-      section: document.getElementById('f-section').value,
-      status: document.getElementById('f-status').value,
-      rx: document.getElementById('f-rx').value,
-      alert: document.getElementById('f-alert').value
-    };
-    if(currentId) db.ref('patients/'+currentId).set(p); else db.ref('patients').push(p);
+function savePatient() {
+  const p = {
+    name: document.getElementById('f-name').value,
+    owner: document.getElementById('f-owner').value,
+    weight: document.getElementById('f-weight').value,
+    species: document.getElementById('f-species').value,
+    location: document.getElementById('f-location').value,
+    dvmAm: document.getElementById('f-dvm-am').value,
+    dvmPm: document.getElementById('f-dvm-pm').value,
+    tech: document.getElementById('f-tech').value,
+    reason: document.getElementById('f-reason').value,
+    section: document.getElementById('f-section').value,
+    status: document.getElementById('f-status').value,
+    rx: document.getElementById('f-rx').value,
+    alert: document.getElementById('f-alert').value
+  };
+  if(currentId) db.ref('patients/'+currentId).set(p); else db.ref('patients').push(p);
+  closeModal();
+}
+
+function deletePatient() {
+  if(confirm("Discharge patient?")) {
+    db.ref('patients/'+currentId).remove();
     closeModal();
   }
+}
 
-  function deletePatient() {
-    if(confirm("Discharge and remove patient?")) {
-      db.ref('patients/'+currentId).remove();
-      closeModal();
+function editPatient(id, p) {
+  currentId = id;
+  document.getElementById('f-name').value = p.name;
+  document.getElementById('f-owner').value = p.owner;
+  document.getElementById('f-weight').value = p.weight;
+  document.getElementById('f-species').value = p.species;
+  document.getElementById('f-location').value = p.location;
+  document.getElementById('f-dvm-am').value = p.dvmAm || '';
+  document.getElementById('f-dvm-pm').value = p.dvmPm || '';
+  document.getElementById('f-tech').value = p.tech;
+  document.getElementById('f-reason').value = p.reason || '';
+  document.getElementById('f-section').value = p.section;
+  document.getElementById('f-status').value = p.status;
+  document.getElementById('f-rx').value = p.rx;
+  document.getElementById('f-alert').value = p.alert;
+  document.getElementById('delBtn').style.display = 'inline-block';
+  openModal();
+}
+
+function toggleEditMode() {
+  editMode = !editMode;
+  document.getElementById('editToggle').classList.toggle('active', editMode);
+  document.getElementById('addBtn').style.display = editMode ? 'block' : 'none';
+  // Re-render to ensure onclick events are active
+  db.ref('patients').once('value', s => renderAll(s.val()));
+}
+
+function openModal() { document.getElementById('modalOverlay').classList.add('open'); }
+function closeModal() { 
+  document.getElementById('modalOverlay').classList.remove('open');
+  currentId = null;
+  document.getElementById('delBtn').style.display = 'none';
+  ['f-name','f-owner','f-weight','f-location','f-dvm-am','f-dvm-pm','f-tech','f-reason','f-rx','f-alert'].forEach(i => document.getElementById(i).value = '');
+}
+
+// SMOOTH AUTOSCROLL
+let scrollInterval = null;
+function startAutoScroll() {
+  scrollInterval = setInterval(() => {
+    if (editMode) return; // Pause scroll if user is editing
+    const currentScroll = window.scrollY;
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    
+    if (currentScroll >= maxScroll - 1) {
+      // At bottom: wait 5s then jump to top
+      clearInterval(scrollInterval);
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(startAutoScroll, 2000);
+      }, 5000);
+    } else {
+      window.scrollBy(0, 1);
     }
-  }
+  }, 50); // Speed: 1px per 50ms
+}
 
-  function editPatient(id, p) {
-    currentId = id;
-    document.getElementById('f-name').value = p.name;
-    document.getElementById('f-owner').value = p.owner;
-    document.getElementById('f-weight').value = p.weight;
-    document.getElementById('f-species').value = p.species;
-    document.getElementById('f-location').value = p.location;
-    document.getElementById('f-dvm-am').value = p.dvmAm || '';
-    document.getElementById('f-dvm-pm').value = p.dvmPm || '';
-    document.getElementById('f-tech').value = p.tech;
-    document.getElementById('f-reason').value = p.reason || '';
-    document.getElementById('f-section').value = p.section;
-    document.getElementById('f-status').value = p.status;
-    document.getElementById('f-rx').value = p.rx;
-    document.getElementById('f-alert').value = p.alert;
-    document.getElementById('delBtn').style.display = 'inline-block';
-    openModal();
-  }
+startAutoScroll();
 
-  function toggleEditMode() {
-    editMode = !editMode;
-    document.getElementById('editToggle').classList.toggle('active', editMode);
-    document.getElementById('addBtn').style.display = editMode ? 'block' : 'none';
-    db.ref('patients').once('value', s => renderAll(s.val()));
-  }
-
-  function openModal() { document.getElementById('modalOverlay').classList.add('open'); }
-  function closeModal() { 
-    document.getElementById('modalOverlay').classList.remove('open');
-    currentId = null;
-    document.getElementById('delBtn').style.display = 'none';
-    ['f-name','f-owner','f-weight','f-location','f-dvm-am','f-dvm-pm','f-tech','f-reason','f-rx','f-alert'].forEach(i => document.getElementById(i).value = '');
-  }
-
-  setInterval(() => {
-    document.getElementById('clock').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  }, 1000);
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}, 1000);
 </script>
 </body>
 </html>
